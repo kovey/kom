@@ -10,10 +10,15 @@ import (
 )
 
 type Config struct {
-	Listen   krpc.Local  `yaml:"listen"`
-	Etcd     etcd.Config `yaml:"etcd"`
-	Zap      zap.Config  `yaml:"zap"`
-	TimeZone string      `yaml:"time_zone"`
+	Listen krpc.Local  `yaml:"listen"` // lsiten config
+	Etcd   etcd.Config `yaml:"etcd"`   // etcd config
+	Zap    zap.Config  `yaml:"zap"`    // zap config
+	App    App         `yaml:"app"`    // app config
+}
+
+type App struct {
+	TimeZone  string `yaml:"time_zone"`
+	PprofOpen string `yaml:"pprof_open"`
 }
 
 func (c *Config) Load(path string) error {

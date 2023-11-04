@@ -22,4 +22,6 @@ zap:
     maxbackups: 1
     localtime: true
     compress: true
-time_zone: Asia/Shanghai
+app:
+  time_zone: Asia/Shanghai
+  pprof_open: On
