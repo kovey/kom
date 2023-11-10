@@ -7,7 +7,7 @@ require (
 	github.com/kovey/cli-go v1.0.8
 	github.com/kovey/debug-go v0.0.4
 	github.com/kovey/discovery v0.0.1
-	github.com/kovey/pool v0.0.1
+	github.com/kovey/pool v0.0.3
 	go.uber.org/zap v1.25.0
 	google.golang.org/grpc v1.58.0
 	google.golang.org/protobuf v1.31.0
