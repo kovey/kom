@@ -9,7 +9,7 @@ import (
 
 func container(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 	nCtx := pool.NewContext(ctx)
-	defer pool.PutNoCtx(nCtx)
+	defer nCtx.Drop()
 
 	resp, err := handler(nCtx, req)
 	return resp, err
