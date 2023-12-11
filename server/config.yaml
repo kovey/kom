@@ -5,6 +5,8 @@ listen:
   port: 8080
   group: default
   name: test.service
+  namespace: default
+  weight: 100
 etcd:
   endpoints:
     - 127.0.0.1:2345
