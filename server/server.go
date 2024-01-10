@@ -112,6 +112,7 @@ func (s *server) Run(a app.AppInterface) error {
 
 func (s *server) Shutdown(a app.AppInterface) error {
 	service.Stop()
+	service.Shutdown()
 	if s.e != nil {
 		s.e.OnShutdown()
 	}

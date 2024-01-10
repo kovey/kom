@@ -10,3 +10,7 @@ func RegisterToCenter(conf etcd.Config, ttl int64, listen *krpc.Local) error {
 	register.Init(conf)
 	return register.Register(listen.Instance(), ttl)
 }
+
+func Shutdown() {
+	register.Shutdown()
+}
