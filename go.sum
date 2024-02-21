@@ -38,10 +38,10 @@ github.com/grpc-ecosystem/go-grpc-middleware v1.4.0/go.mod h1:g5qyo/la0ALbONm6Vb
 github.com/kisielk/errcheck v1.5.0/go.mod h1:pFxgyoBC7bSaBwPgfKdkLd5X25qrDl4LWUI2bnpBCr8=
 github.com/kisielk/gotool v1.0.0/go.mod h1:XhKaO+MFFWcvkIS/tQcRk01m1F5IRFswLeQ+oQHNcck=
 github.com/konsorten/go-windows-terminal-sequences v1.0.1/go.mod h1:T0+1ngSBFLxvqU3pZ+m/2kptfBszLMUkC4ZK/EgS/cQ=
-github.com/kovey/cli-go v1.0.8 h1:XpNQXpTxpN/38VUbthfXguVWUp+bizhGnDBYnPbNzTQ=
-github.com/kovey/cli-go v1.0.8/go.mod h1:f2aaC9Bsgbgf5toraLtEMTnwIIdA8fdzEhRswWyxW6A=
-github.com/kovey/debug-go v0.0.4 h1:NcELrlEuk2Jiwv/oQrX2DCYSfBXW8f1XK98qz+zN8FQ=
-github.com/kovey/debug-go v0.0.4/go.mod h1:W78LFv4FPXXrXCc8r8kPey7sLm9YkCRRJ7BYnJmHsCA=
+github.com/kovey/cli-go v1.0.9 h1:a/PNHM+/AE/iIso1GxcjQdfOOMDB4+2lrABQl+lHfQQ=
+github.com/kovey/cli-go v1.0.9/go.mod h1:f2aaC9Bsgbgf5toraLtEMTnwIIdA8fdzEhRswWyxW6A=
+github.com/kovey/debug-go v0.0.5 h1:c81KNW/mganMHZOAj9n8FY1e9Zz203GwPNJCnpfsVRQ=
+github.com/kovey/debug-go v0.0.5/go.mod h1:J88EXuunCnkLg62OEafQHDzkD2hq8r3Vi2Lkv+KHd9U=
 github.com/kovey/discovery v0.0.4 h1:bcT6jxlCj8LaDlzgMc+gIA2xytDq7tpNd4t/balXVJc=
 github.com/kovey/discovery v0.0.4/go.mod h1:I1rKDZHsu5R1RvnrTy7kx8PLVg2ggWLz52TfF2tcYxo=
 github.com/kovey/pool v0.0.7 h1:ucHJj5tC9ERlUfzOTlupP1B4ggSL9ST6wdNnr3brUXA=
