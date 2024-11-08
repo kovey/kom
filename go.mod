@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
-	github.com/kovey/cli-go v1.1.7
+	github.com/kovey/cli-go v1.1.8
 	github.com/kovey/debug-go v0.0.5
 	github.com/kovey/discovery v0.0.4
 	github.com/kovey/pool v0.0.7
