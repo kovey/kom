@@ -3,6 +3,8 @@ package server
 import (
 	"context"
 	"fmt"
+	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -10,13 +12,18 @@ import (
 	_ "net/http/pprof"
 
 	"github.com/kovey/cli-go/app"
+	"github.com/kovey/cli-go/env"
 	"github.com/kovey/debug-go/debug"
+	"github.com/kovey/discovery/etcd"
+	"github.com/kovey/discovery/krpc"
+	"github.com/kovey/kom"
 	"github.com/kovey/kom/service"
+	"github.com/kovey/kom/zap"
+	"gopkg.in/natefinch/lumberjack.v2"
 )
 
 type server struct {
 	*app.ServBase
-	conf  *Config
 	e     EventInterface
 	wait  sync.WaitGroup
 	pprof *http.Server
@@ -26,30 +33,8 @@ func newServer(e EventInterface) *server {
 	return &server{e: e, wait: sync.WaitGroup{}}
 }
 
-func (s *server) loadConf(a app.AppInterface) error {
-	path, err := a.Get("c")
-	if err != nil {
-		return err
-	}
-	tmp := path.String()
-	if tmp == "" {
-		return fmt.Errorf("path is emty")
-	}
-
-	conf := &Config{}
-	if err := conf.Load(tmp); err != nil {
-		return err
-	}
-
-	s.conf = conf
-	return nil
-}
-
 func (s *server) Init(a app.AppInterface) error {
-	if err := s.loadConf(a); err != nil {
-		return err
-	}
-	location, err := time.LoadLocation(s.conf.App.TimeZone)
+	location, err := time.LoadLocation(os.Getenv("APP_TIME_ZONE"))
 	if err != nil {
 		return err
 	}
@@ -61,8 +46,47 @@ func (s *server) Init(a app.AppInterface) error {
 		}
 	}
 
-	service.Init(s.conf.Zap)
-	if err := service.RegisterToCenter(s.conf.Etcd, 10, &s.conf.Listen); err != nil {
+	maxSize, _ := env.GetInt(kom.ZAP_LOGGER_MAX_SIZE)
+	maxAge, _ := env.GetInt(kom.ZAP_LOGGER_MAX_AGE)
+	maxBackups, _ := env.GetInt(kom.ZAP_LOGGER_MAX_BACKUPS)
+	localTime, _ := env.GetBool(kom.ZAP_LOGGER_LOCAL_TIME)
+	compress, _ := env.GetBool(kom.ZAP_LOGGER_COMPRESS)
+	service.Init(zap.Config{
+		Level: os.Getenv(kom.ZAP_LEVEL), Env: os.Getenv(kom.ZAP_ENV),
+		OpenTracing: os.Getenv(kom.ZAP_OPEN_TRACING),
+		Logger: &lumberjack.Logger{
+			Filename:   os.Getenv(kom.ZAP_LOGGER_FILE_NAME),
+			MaxSize:    maxSize,
+			MaxAge:     maxAge,
+			MaxBackups: maxBackups,
+			LocalTime:  localTime,
+			Compress:   compress,
+		},
+	})
+
+	timeout, _ := env.GetInt(kom.ETCD_TIMEOUT)
+	conf := etcd.Config{
+		Endpoints:   strings.Split(os.Getenv(kom.ETCD_ENDPOINTS), ","),
+		DialTimeout: timeout,
+		Username:    os.Getenv(kom.ETCD_USERNAME),
+		Password:    os.Getenv(kom.ETCD_PASSWORD),
+		Namespace:   os.Getenv(kom.ETCD_NAMESPACE),
+	}
+	port, _ := env.GetInt(kom.SERV_PORT)
+	weight, _ := env.GetInt(kom.SERV_WEIGHT)
+	local := &krpc.Local{
+		Host:    os.Getenv(kom.SERV_HOST),
+		Port:    port,
+		Name:    krpc.ServiceName(os.Getenv(kom.SERV_NAME)),
+		Group:   os.Getenv(kom.SERV_GROUP),
+		Weight:  int64(weight),
+		Version: os.Getenv(kom.SERV_VERSION),
+	}
+	ttl, _ := env.GetInt("SERV_TTL")
+	if ttl <= 0 {
+		ttl = 10
+	}
+	if err := service.RegisterToCenter(conf, int64(ttl), local); err != nil {
 		return err
 	}
 
@@ -86,11 +110,12 @@ func (s *server) runAfter() {
 
 func (s *server) runMonitor() {
 	defer s.wait.Done()
-	if s.conf.App.PprofOpen != "On" {
+	if pprofOn, err := env.GetBool(kom.APP_PPROF_OPEN); err != nil || !pprofOn {
 		return
 	}
 
-	s.pprof = &http.Server{Addr: fmt.Sprintf("%s:%d", s.conf.Listen.Host, s.conf.Listen.Port+10000), Handler: http.DefaultServeMux}
+	port, _ := env.GetInt(kom.SERV_PORT)
+	s.pprof = &http.Server{Addr: fmt.Sprintf("%s:%d", os.Getenv(kom.SERV_HOST), port+10000), Handler: http.DefaultServeMux}
 	if err := s.pprof.ListenAndServe(); err != nil {
 		debug.Erro("listen pprof failure, error: %s", err)
 	}
@@ -102,8 +127,9 @@ func (s *server) Run(a app.AppInterface) error {
 	s.wait.Add(1)
 	go s.runMonitor()
 
-	debug.Info("app[%s] listen on [%s]", a.Name(), s.conf.Listen.Addr())
-	if err := service.Listen(s.conf.Listen.Host, s.conf.Listen.Port); err != nil {
+	port, _ := env.GetInt(kom.SERV_PORT)
+	debug.Info("app[%s] listen on [%s:%d]", a.Name(), os.Getenv(kom.SERV_HOST), port)
+	if err := service.Listen(os.Getenv(kom.SERV_HOST), port); err != nil {
 		return err
 	}
 

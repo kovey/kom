@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
-	github.com/kovey/cli-go v1.0.9
+	github.com/kovey/cli-go v1.1.7
 	github.com/kovey/debug-go v0.0.5
 	github.com/kovey/discovery v0.0.4
 	github.com/kovey/pool v0.0.7
@@ -12,7 +12,6 @@ require (
 	google.golang.org/grpc v1.59.0
 	google.golang.org/protobuf v1.31.0
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
-	gopkg.in/yaml.v2 v2.4.0
 )
 
 require (
