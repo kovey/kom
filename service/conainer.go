@@ -11,6 +11,5 @@ func container(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler
 	nCtx := pool.NewContext(ctx)
 	defer nCtx.Drop()
 
-	resp, err := handler(nCtx, req)
-	return resp, err
+	return handler(nCtx, req)
 }

@@ -18,8 +18,6 @@ import (
 	"github.com/kovey/discovery/krpc"
 	"github.com/kovey/kom"
 	"github.com/kovey/kom/service"
-	"github.com/kovey/kom/zap"
-	"gopkg.in/natefinch/lumberjack.v2"
 )
 
 type server struct {
@@ -46,24 +44,7 @@ func (s *server) Init(a app.AppInterface) error {
 		}
 	}
 
-	maxSize, _ := env.GetInt(kom.ZAP_LOGGER_MAX_SIZE)
-	maxAge, _ := env.GetInt(kom.ZAP_LOGGER_MAX_AGE)
-	maxBackups, _ := env.GetInt(kom.ZAP_LOGGER_MAX_BACKUPS)
-	localTime, _ := env.GetBool(kom.ZAP_LOGGER_LOCAL_TIME)
-	compress, _ := env.GetBool(kom.ZAP_LOGGER_COMPRESS)
-	service.Init(zap.Config{
-		Level: os.Getenv(kom.ZAP_LEVEL), Env: os.Getenv(kom.ZAP_ENV),
-		OpenTracing: os.Getenv(kom.ZAP_OPEN_TRACING),
-		Logger: &lumberjack.Logger{
-			Filename:   os.Getenv(kom.ZAP_LOGGER_FILE_NAME),
-			MaxSize:    maxSize,
-			MaxAge:     maxAge,
-			MaxBackups: maxBackups,
-			LocalTime:  localTime,
-			Compress:   compress,
-		},
-	})
-
+	service.Init()
 	timeout, _ := env.GetInt(kom.ETCD_TIMEOUT)
 	conf := etcd.Config{
 		Endpoints:   strings.Split(os.Getenv(kom.ETCD_ENDPOINTS), ","),

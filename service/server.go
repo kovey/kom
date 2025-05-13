@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/kovey/kom/zap"
 	"google.golang.org/grpc"
 )
 
@@ -15,9 +14,8 @@ const (
 
 var serv *grpc.Server
 
-func Init(logConf zap.Config) {
-	logger := zap.New(logConf)
-	serv = grpc.NewServer(stream(logger), unary(logger))
+func Init() {
+	serv = grpc.NewServer(grpc.ChainStreamInterceptor(stream_reco, stream_logger), grpc.ChainUnaryInterceptor(container, recovery, logger))
 	for _, sv := range svs.svs {
 		serv.RegisterService(sv.Desc(), sv)
 	}

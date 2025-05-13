@@ -1,35 +1,96 @@
 package service
 
 import (
-	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
-	grpc_zap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
-	grpc_recovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
-	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
-	grpc_opentracing "github.com/grpc-ecosystem/go-grpc-middleware/tracing/opentracing"
-	kz "github.com/kovey/kom/zap"
-	"go.uber.org/zap"
+	"context"
+	"encoding/json"
+	"fmt"
+	"runtime"
+	"strings"
+	"time"
+
+	"github.com/kovey/debug-go/debug"
 	"google.golang.org/grpc"
 )
 
-func stream(logger *zap.Logger) grpc.ServerOption {
-	return grpc.StreamInterceptor(
-		grpc_middleware.ChainStreamServer(
-			grpc_ctxtags.StreamServerInterceptor(),
-			grpc_opentracing.StreamServerInterceptor(),
-			grpc_zap.StreamServerInterceptor(logger, grpc_zap.WithMessageProducer(kz.MessageProducer)),
-			grpc_recovery.StreamServerInterceptor(grpc_recovery.WithRecoveryHandlerContext(kz.Reco)),
-		),
-	)
+func stack() string {
+	res := make([]string, 0)
+	for i := 3; ; i++ {
+		_, file, line, ok := runtime.Caller(i)
+		if !ok {
+			break
+		}
+		res = append(res, fmt.Sprintf("%s(%d)", file, line))
+	}
+
+	return strings.Join(res, "\n")
 }
 
-func unary(logger *zap.Logger) grpc.ServerOption {
-	return grpc.UnaryInterceptor(
-		grpc_middleware.ChainUnaryServer(
-			grpc_ctxtags.UnaryServerInterceptor(),
-			grpc_opentracing.UnaryServerInterceptor(),
-			grpc_zap.UnaryServerInterceptor(logger, grpc_zap.WithMessageProducer(kz.MessageProducer)),
-			grpc_recovery.UnaryServerInterceptor(grpc_recovery.WithRecoveryHandlerContext(kz.Reco)),
-			container,
-		),
-	)
+func stream_reco(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+	defer func() {
+		err := recover()
+		if err == nil {
+			return
+		}
+
+		streamName := "client"
+		if info.IsServerStream {
+			streamName = "server"
+		}
+
+		debug.Erro("%s %s %s\n%s", streamName, info.FullMethod, err, stack())
+	}()
+
+	return handler(srv, ss)
+}
+
+func recovery(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
+	defer func() {
+		err := recover()
+		if err == nil {
+			return
+		}
+
+		traceId := ""
+		if tmp, ok := ctx.Value("ko_trace_id").(string); ok {
+			traceId = tmp
+		}
+		debug.Erro("%s %s %s\n%s", traceId, info.FullMethod, err, stack())
+	}()
+	return handler(ctx, req)
+}
+
+func stream_logger(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+	begin := time.Now().UnixMicro()
+	err := handler(srv, ss)
+	delay := float64(time.Now().UnixMicro()-begin) * 0.001
+	errStr := ""
+	if err != nil {
+		errStr = err.Error()
+	}
+	streamName := "client"
+	if info.IsServerStream {
+		streamName = "server"
+	}
+
+	debug.Info("%s %s %.3f %s", streamName, info.FullMethod, delay, errStr)
+	return err
+}
+
+func logger(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
+	begin := time.Now().UnixMicro()
+	resp, err = handler(ctx, req)
+	delay := float64(time.Now().UnixMicro()-begin) * 0.001
+	reqData, _ := json.Marshal(req)
+	respDta, _ := json.Marshal(resp)
+	traceId := ""
+	if tmp, ok := ctx.Value("ko_trace_id").(string); ok {
+		traceId = tmp
+	}
+	errStr := ""
+	if err != nil {
+		errStr = err.Error()
+	}
+
+	debug.Info("%s %s %.3f %s %s, %s", traceId, info.FullMethod, delay, errStr, string(reqData), string(respDta))
+	return resp, err
 }
