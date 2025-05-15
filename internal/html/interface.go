@@ -137,7 +137,6 @@ const Interface_Html = `<!DOCTYPE html>
                 const input = inputs[i]
                 form[input.getAttribute('name')] = input.value;
             }
-			console.log(JSON.stringify(form));
             http.send(JSON.stringify(form));
         }
     </script>
