@@ -12,6 +12,7 @@ import (
 
 	"github.com/kovey/cli-go/env"
 	"github.com/kovey/debug-go/debug"
+	"github.com/kovey/debug-go/run"
 	"github.com/kovey/kom/internal/html"
 )
 
@@ -24,6 +25,13 @@ func Shutdown() {
 func Run(s *Serv) {
 	port, _ := env.GetInt("SERV_PORT")
 	http.HandleFunc("/ko/rpc", func(w http.ResponseWriter, r *http.Request) {
+		defer func() {
+			if err := recover(); err != nil {
+				run.Panic(err)
+				w.WriteHeader(http.StatusInternalServerError)
+				w.Write([]byte(http.StatusText(http.StatusInternalServerError)))
+			}
+		}()
 		r.ParseForm()
 		servName := r.Form.Get("q")
 		tmp := s
@@ -45,6 +53,13 @@ func Run(s *Serv) {
 		}
 	})
 	http.HandleFunc("/ko/rpc/interface", func(w http.ResponseWriter, r *http.Request) {
+		defer func() {
+			if err := recover(); err != nil {
+				run.Panic(err)
+				w.WriteHeader(http.StatusInternalServerError)
+				w.Write([]byte(http.StatusText(http.StatusInternalServerError)))
+			}
+		}()
 		r.ParseForm()
 		servName := r.Form.Get("q")
 		str := s.Get(servName)
@@ -71,6 +86,13 @@ func Run(s *Serv) {
 		}
 	})
 	http.HandleFunc("/ko/rpc/do", func(w http.ResponseWriter, r *http.Request) {
+		defer func() {
+			if err := recover(); err != nil {
+				run.Panic(err)
+				w.WriteHeader(http.StatusInternalServerError)
+				w.Write([]byte(http.StatusText(http.StatusInternalServerError)))
+			}
+		}()
 		r.ParseForm()
 		servName := r.Form.Get("q")
 		str := s.Get(servName)
