@@ -34,6 +34,7 @@ func Register(sv ServiceInterface) {
 	}
 
 	serv.RegisterService(sv.Desc(), sv)
+	svs.tests.Register(sv)
 }
 
 func Listen(host string, prot int) error {

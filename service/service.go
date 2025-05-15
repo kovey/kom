@@ -1,6 +1,7 @@
 package service
 
 import (
+	"github.com/kovey/kom/internal"
 	"google.golang.org/grpc"
 )
 
@@ -21,15 +22,21 @@ func (b *Base) Desc() *grpc.ServiceDesc {
 }
 
 type services struct {
-	svs []ServiceInterface
+	svs   []ServiceInterface
+	tests *internal.Serv
 }
 
 func newServices() *services {
-	return &services{}
+	return &services{tests: internal.NewServ()}
 }
 
 func (s *services) add(sv ServiceInterface) {
 	s.svs = append(s.svs, sv)
+	s.tests.Register(sv)
 }
 
 var svs = newServices()
+
+func Tests() *internal.Serv {
+	return svs.tests
+}

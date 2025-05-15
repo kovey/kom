@@ -17,6 +17,7 @@ import (
 	"github.com/kovey/discovery/etcd"
 	"github.com/kovey/discovery/krpc"
 	"github.com/kovey/kom"
+	"github.com/kovey/kom/internal"
 	"github.com/kovey/kom/service"
 )
 
@@ -45,30 +46,32 @@ func (s *server) Init(a app.AppInterface) error {
 	}
 
 	service.Init()
-	timeout, _ := env.GetInt(kom.ETCD_TIMEOUT)
-	conf := etcd.Config{
-		Endpoints:   strings.Split(os.Getenv(kom.ETCD_ENDPOINTS), ","),
-		DialTimeout: timeout,
-		Username:    os.Getenv(kom.ETCD_USERNAME),
-		Password:    os.Getenv(kom.ETCD_PASSWORD),
-		Namespace:   os.Getenv(kom.ETCD_NAMESPACE),
-	}
-	port, _ := env.GetInt(kom.SERV_PORT)
-	weight, _ := env.GetInt(kom.SERV_WEIGHT)
-	local := &krpc.Local{
-		Host:    os.Getenv(kom.SERV_HOST),
-		Port:    port,
-		Name:    krpc.ServiceName(os.Getenv(kom.SERV_NAME)),
-		Group:   os.Getenv(kom.SERV_GROUP),
-		Weight:  int64(weight),
-		Version: os.Getenv(kom.SERV_VERSION),
-	}
-	ttl, _ := env.GetInt("SERV_TTL")
-	if ttl <= 0 {
-		ttl = 10
-	}
-	if err := service.RegisterToCenter(conf, int64(ttl), local); err != nil {
-		return err
+	if open, err := env.GetBool(kom.APP_ETCD_OPEN); err == nil && open {
+		timeout, _ := env.GetInt(kom.ETCD_TIMEOUT)
+		conf := etcd.Config{
+			Endpoints:   strings.Split(os.Getenv(kom.ETCD_ENDPOINTS), ","),
+			DialTimeout: timeout,
+			Username:    os.Getenv(kom.ETCD_USERNAME),
+			Password:    os.Getenv(kom.ETCD_PASSWORD),
+			Namespace:   os.Getenv(kom.ETCD_NAMESPACE),
+		}
+		port, _ := env.GetInt(kom.SERV_PORT)
+		weight, _ := env.GetInt(kom.SERV_WEIGHT)
+		local := &krpc.Local{
+			Host:    os.Getenv(kom.SERV_HOST),
+			Port:    port,
+			Name:    krpc.ServiceName(os.Getenv(kom.SERV_NAME)),
+			Group:   os.Getenv(kom.SERV_GROUP),
+			Weight:  int64(weight),
+			Version: os.Getenv(kom.SERV_VERSION),
+		}
+		ttl, _ := env.GetInt("SERV_TTL")
+		if ttl <= 0 {
+			ttl = 10
+		}
+		if err := service.RegisterToCenter(conf, int64(ttl), local); err != nil {
+			return err
+		}
 	}
 
 	if s.e != nil {
@@ -96,10 +99,19 @@ func (s *server) runMonitor() {
 	}
 
 	port, _ := env.GetInt(kom.SERV_PORT)
-	s.pprof = &http.Server{Addr: fmt.Sprintf("%s:%d", os.Getenv(kom.SERV_HOST), port+10000), Handler: http.DefaultServeMux}
+	s.pprof = &http.Server{Addr: fmt.Sprintf("%s:%d", os.Getenv(kom.SERV_HOST), port+10001), Handler: http.DefaultServeMux}
 	if err := s.pprof.ListenAndServe(); err != nil {
 		debug.Erro("listen pprof failure, error: %s", err)
 	}
+}
+
+func (s *server) runTest() {
+	defer s.wait.Done()
+	if testOn, err := env.GetBool(kom.APP_TEST_OPEN); err != nil || !testOn {
+		return
+	}
+
+	internal.Run(service.Tests())
 }
 
 func (s *server) Run(a app.AppInterface) error {
@@ -107,6 +119,8 @@ func (s *server) Run(a app.AppInterface) error {
 	go s.runAfter()
 	s.wait.Add(1)
 	go s.runMonitor()
+	s.wait.Add(1)
+	go s.runTest()
 
 	port, _ := env.GetInt(kom.SERV_PORT)
 	debug.Info("app[%s] listen on [%s:%d]", a.Name(), os.Getenv(kom.SERV_HOST), port)
@@ -129,6 +143,7 @@ func (s *server) Shutdown(a app.AppInterface) error {
 		}
 	}
 
+	internal.Shutdown()
 	s.wait.Wait()
 	return nil
 }
