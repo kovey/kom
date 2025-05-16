@@ -34,10 +34,10 @@ func (s *Struct) Get(funcName string) *Func {
 	return nil
 }
 
-func (s *Struct) Call(funcName string, args []any) ([]any, error) {
+func (s *Struct) Call(funcName string, args []any) ([]*RunOutArg, error) {
 	for _, fn := range s.Funcs {
 		if fn.Name == funcName {
-			return fn.Call(args)
+			return fn.Call(args), nil
 		}
 	}
 
@@ -69,6 +69,7 @@ func _parse(desc ServiceInterface) *Struct {
 			iType := fn.Type.Out(j)
 			fnInfo.OutArgs = append(fnInfo.OutArgs, _parseArg(iType, j, false))
 		}
+		fnInfo.OutMaxIndex = len(fnInfo.OutArgs) - 1
 	}
 
 	return s

@@ -17,3 +17,10 @@ func (a *Arg) Val() any {
 
 	return reflect.New(a.typ).Interface()
 }
+
+type RunOutArg struct {
+	ArgName    string `json:"arg_name"`
+	TypeName   string `json:"type_name"`
+	TypePrefix string `json:"type_prefix"`
+	Value      any    `json:"value"`
+}

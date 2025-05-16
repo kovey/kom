@@ -7,16 +7,17 @@ import (
 )
 
 type Func struct {
-	Name    string
-	Struct  string
-	InArgs  []*Arg
-	OutArgs []*Arg
-	Comment string
-	body    reflect.Value
+	Name        string
+	Struct      string
+	InArgs      []*Arg
+	OutArgs     []*Arg
+	Comment     string
+	body        reflect.Value
+	OutMaxIndex int
 }
 
 func (f *Func) DoHtml(q, m, version string) *DoHtml {
-	return &DoHtml{M: m, Q: q, Name: f.Name, Struct: f.Struct, InArgs: f.InArgs, OutArgs: f.OutArgs, Comment: f.Comment, Version: version}
+	return &DoHtml{M: m, Q: q, Name: f.Name, Struct: f.Struct, InArgs: f.InArgs, OutArgs: f.OutArgs, Comment: f.Comment, Version: version, OutMaxIndex: f.OutMaxIndex}
 }
 
 func (f *Func) Get(argName string) *Arg {
@@ -29,36 +30,35 @@ func (f *Func) Get(argName string) *Arg {
 	return nil
 }
 
-func (f *Func) Call(args []any) ([]any, error) {
+func (f *Func) Call(args []any) []*RunOutArg {
 	inputs := make([]reflect.Value, len(args))
 	for index, arg := range args {
 		inputs[index] = reflect.ValueOf(arg)
 	}
 
 	tmp := f.body.Call(inputs)
-	outs := make([]any, len(tmp)-1)
+	outs := make([]*RunOutArg, len(tmp))
 	for i := 0; i < len(outs); i++ {
+		outArg := f.OutArgs[i]
 		if tmp[i].IsNil() {
-			outs[i] = nil
+			outs[i] = &RunOutArg{ArgName: outArg.ArgName, TypeName: outArg.ArgName, TypePrefix: outArg.TypePrefix, Value: "nil"}
 			continue
 		}
 
-		outs[i] = tmp[i].Interface()
+		outs[i] = &RunOutArg{ArgName: outArg.ArgName, TypeName: outArg.ArgName, TypePrefix: outArg.TypePrefix, Value: tmp[i].Interface()}
+		if err, ok := outs[i].Value.(error); ok {
+			outs[i].Value = err.Error()
+		}
 	}
 
-	last := tmp[len(outs)]
-	if last.IsNil() {
-		return outs, nil
-	}
-
-	return outs, last.Interface().(error)
+	return outs
 }
 
-func (f *Func) ParseArgs(data map[string]string) ([]any, error) {
+func (f *Func) ParseArgs(ctx context.Context, data map[string]string) ([]any, error) {
 	args := make([]any, len(f.InArgs))
 	for index, arg := range f.InArgs {
 		if arg.TypeName == "context.Context" {
-			args[index] = context.Background()
+			args[index] = ctx
 			continue
 		}
 		tmpArg := arg.Val()

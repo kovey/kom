@@ -78,13 +78,20 @@ const Interface_Html = `<!DOCTYPE html>
 												{{range .InArgs}}
 												<summary class="Documentation-exampleDetailsHeader" style="margin-top:1rem;margin-bottom:0.1rem;">{{.ArgName}} {{.TypePrefix}}{{.TypeName}} (Use Json Instead)</summary>
 												<div class="Documentation-exampleDetailsBody">
-													<textarea name="{{.ArgName}}" class="Documentation-exampleCode code argument-value" spellcheck="false" style="height: 10.375rem;">{{.Default}}</textarea>
+													<textarea name="{{.ArgName}}" class="Documentation-exampleCode code argument-value" spellcheck="false" style="height: 10.375rem;border-radius:0.3rem;" onchange="doFormat(this)">{{.Default}}</textarea>
+													<pre hidden="true" style="border-radius:0.3rem;margin-top:0rem;"><span class="Documentation-exampleOutputLabel" style="color:red"></span></pre>
 												</div>
 												{{end}}
 												<div class="Documentation-exampleDetailsBody">
-													<pre><span class="Documentation-exampleOutputLabel">Output:</span>
-<p class="Documentation-exampleOutput" id="code-run-result"></p></pre>
+													<pre style="border-radius:0.3rem 0.3rem 0rem 0rem;margin-top:0rem;"><span class="Documentation-exampleOutputLabel">Output:</span></pre>
 												</div>
+												{{$outMaxIndex := .OutMaxIndex}}
+												{{range $outIndex, $outArg := .OutArgs}}
+												<div class="Documentation-exampleDetailsBody" style="margin-top:-1rem;">
+													<pre style="border-radius:{{if lt $outIndex $outMaxIndex}}0rem{{else}}0rem 0rem 0.3rem 0.3rem{{end}};"><span class="Documentation-exampleOutputLabel">Value Of <b style="color:var(--color-brand-primary);">{{$outArg.TypePrefix}}{{$outArg.TypeName}}</b></span>
+													<p class="Documentation-exampleOutput" id="code-run-result-{{$outIndex}}"></p></pre>
+												</div>
+												{{end}}
 												<div class="Documentation-exampleButtonsContainer">
 														<p class="Documentation-exampleError" role="alert" aria-atomic="true"></p>
 														<button class="Documentation-exampleRunButton" aria-label="Run Code" onclick="doInterface()" >Run</button>
@@ -119,17 +126,26 @@ const Interface_Html = `<!DOCTYPE html>
                     return;
                 }
 
-                if (http.status !== 0 || http.status < 200 || http.status >= 400) {
-                    document.getElementById("code-run-result").innerHTML = http.responseText;
+                if (http.status < 200 || http.status >= 400) {
+                    document.getElementById("code-run-result-0").innerHTML = "nil";
+                    document.getElementById("code-run-result-1").innerHTML = http.responseText;
                     return
                 }
 
-                document.getElementById("code-run-result").innerHTML = JSON.stringify(JSON.parse(http.responseText), null, 4);
+				const response = JSON.parse(http.response)
+				for (var i in response) {
+					if (response[i].value == "nil") {
+						document.getElementById("code-run-result-" + i).innerHTML = response[i].value;
+						continue;
+					}
+
+					document.getElementById("code-run-result-" + i).innerHTML = JSON.stringify(response[i].value, null, 4);
+				}
             };
             http.setRequestHeader("Content-Type", "application/json");
             http.timeout = 30000
             http.ontimeout = function () {
-                document.getElementById("code-run-result").innerHTML = 'request timeout';
+                document.getElementById("code-run-result").value = 'request timeout';
             }
             var form = {}
             inputs = document.getElementsByClassName('argument-value');
@@ -139,5 +155,17 @@ const Interface_Html = `<!DOCTYPE html>
             }
             http.send(JSON.stringify(form));
         }
+
+		function doFormat(obj) {
+			try {
+				obj.value = JSON.stringify(JSON.parse(obj.value), null, 4);
+				obj.style.borderColor = '';
+				obj.nextElementSibling.hidden = true;
+			} catch (e) {
+				obj.style.borderColor = 'red';
+				obj.nextElementSibling.hidden = false;
+				obj.nextElementSibling.firstElementChild.innerHTML = e
+			}
+		}
     </script>
 </html>`

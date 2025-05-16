@@ -14,6 +14,7 @@ import (
 	"github.com/kovey/debug-go/debug"
 	"github.com/kovey/debug-go/run"
 	"github.com/kovey/kom/internal/html"
+	"github.com/kovey/pool"
 )
 
 var serv = &http.Server{}
@@ -97,14 +98,14 @@ func Run(s *Serv) {
 		servName := r.Form.Get("q")
 		str := s.Get(servName)
 		if str == nil {
-			w.WriteHeader(http.StatusOK)
+			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte(fmt.Sprintf("service[%s] not found", servName)))
 			return
 		}
 		funcName := r.Form.Get("m")
 		method := str.Get(funcName)
 		if method == nil {
-			w.WriteHeader(http.StatusOK)
+			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte(fmt.Sprintf("method[%s] of service[%s] not found", funcName, servName)))
 			return
 		}
@@ -112,41 +113,36 @@ func Run(s *Serv) {
 		defer r.Body.Close()
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
-			w.WriteHeader(http.StatusOK)
+			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte(err.Error()))
 			return
 		}
 
 		var data map[string]string
 		if err := json.Unmarshal(body, &data); err != nil {
-			w.WriteHeader(http.StatusOK)
+			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte(err.Error()))
 			return
 		}
 
-		args, err := method.ParseArgs(data)
+		ctx := pool.NewContext(context.Background())
+		args, err := method.ParseArgs(ctx, data)
 		if err != nil {
-			w.WriteHeader(http.StatusOK)
+			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte(err.Error()))
 			return
 		}
 
-		out, err := method.Call(args)
+		out := method.Call(args)
+		content, err := json.Marshal(out)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(err.Error()))
+			return
+		}
 		w.WriteHeader(http.StatusOK)
-		if err != nil {
-			w.Write([]byte(err.Error()))
-			return
-		}
-
-		for index, o := range out {
-			if index > 0 {
-				w.Write([]byte("<br>"))
-			}
-
-			if content, err := json.Marshal(o); err == nil {
-				w.Write(content)
-			}
-		}
+		w.Header().Add("Content-Type", "application/json")
+		w.Write(content)
 	})
 	serv.Addr = fmt.Sprintf("%s:%d", os.Getenv("SERV_HOST"), port+10000)
 	serv.ListenAndServe()
