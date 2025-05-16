@@ -25,6 +25,24 @@ func Shutdown() {
 
 func Run(s *Serv) {
 	port, _ := env.GetInt("SERV_PORT")
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		defer func() {
+			if err := recover(); err != nil {
+				run.Panic(err)
+				w.WriteHeader(http.StatusInternalServerError)
+				w.Write([]byte(http.StatusText(http.StatusInternalServerError)))
+			}
+		}()
+		w.WriteHeader(http.StatusOK)
+		w.Header().Add("Content-Type", "text/html")
+		tpl := template.Must(template.New("index").Parse(html.Index_Html))
+		if err := tpl.Execute(w, s); err != nil {
+			debug.Erro(err.Error())
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(http.StatusText(http.StatusInternalServerError)))
+			return
+		}
+	})
 	http.HandleFunc("/ko/rpc", func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if err := recover(); err != nil {
@@ -45,6 +63,7 @@ func Run(s *Serv) {
 			}
 		}
 		w.WriteHeader(http.StatusOK)
+		w.Header().Add("Content-Type", "text/html")
 		tpl := template.Must(template.New("list").Parse(html.List_Html))
 		if err := tpl.Execute(w, tmp); err != nil {
 			debug.Erro(err.Error())
@@ -79,6 +98,7 @@ func Run(s *Serv) {
 
 		tpl := template.Must(template.New("interface").Parse(html.Interface_Html))
 		w.WriteHeader(http.StatusOK)
+		w.Header().Add("Content-Type", "text/html")
 		if err := tpl.Execute(w, method.DoHtml(servName, funcName, s.Version)); err != nil {
 			debug.Erro(err.Error())
 			w.WriteHeader(http.StatusInternalServerError)
