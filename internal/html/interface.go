@@ -75,10 +75,11 @@ const Interface_Html = `<!DOCTYPE html>
 												<pre>func (*<a href="/ko/rpc#{{.Struct}}">{{.Struct}}</a>) {{.Name}}({{range $index, $arg := .InArgs}}{{if gt $index 0}}, {{end}}{{.ArgName}} {{.TypePrefix}}{{.TypeName}}{{end}}) {{$outCount := len .OutArgs}}{{if gt $outCount 0}}({{range $index, $arg := .OutArgs}}{{if gt $index 0}}, {{end}}{{.TypePrefix}}{{.TypeName}}{{end}}){{end}}</pre>
                                                 </div>
                                                 <p></p>
+												{{$context := "context.Context"}}
 												{{range .InArgs}}
-												<summary class="Documentation-exampleDetailsHeader" style="margin-top:1rem;margin-bottom:0.1rem;">{{.ArgName}} {{.TypePrefix}}{{.TypeName}} (Use Json Instead)</summary>
+												<summary class="Documentation-exampleDetailsHeader" style="margin-top:1rem;margin-bottom:0.1rem;">{{.ArgName}} {{.TypePrefix}}{{.TypeName}}{{if ne $context .TypeName}} (Use Json Instead){{end}}</summary>
 												<div class="Documentation-exampleDetailsBody">
-													<textarea name="{{.ArgName}}" class="Documentation-exampleCode code argument-value" spellcheck="false" style="height: 10.375rem;border-radius:0.3rem;" onchange="doFormat(this)">{{.Default}}</textarea>
+													<textarea name="{{.ArgName}}" class="Documentation-exampleCode code argument-value" spellcheck="false" style="height: {{if eq $context .TypeName}}2.675{{else}}10.375{{end}}rem;border-radius:0.3rem;" onchange="doFormat(this)" {{if eq $context .TypeName}}readonly{{end}}>{{.Default}}</textarea>
 													<pre hidden="true" style="border-radius:0.3rem;margin-top:0rem;"><span class="Documentation-exampleOutputLabel" style="color:red"></span></pre>
 												</div>
 												{{end}}
