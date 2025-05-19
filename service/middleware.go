@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/kovey/debug-go/debug"
+	"github.com/kovey/discovery/krpc"
 	"google.golang.org/grpc"
 )
 
@@ -51,7 +52,7 @@ func recovery(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler 
 		}
 
 		traceId := ""
-		if tmp, ok := ctx.Value("ko_trace_id").(string); ok {
+		if tmp, ok := ctx.Value(krpc.Ko_Trace_Id).(string); ok {
 			traceId = tmp
 		}
 		debug.Erro("%s %s %s\n%s", traceId, info.FullMethod, err, stack())
@@ -72,7 +73,7 @@ func stream_logger(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, h
 		streamName = "server"
 	}
 
-	debug.Info("%s %s %.3f %s", streamName, info.FullMethod, delay, errStr)
+	debug.Info("%s %s %.3fms %s", streamName, info.FullMethod, delay, errStr)
 	return err
 }
 
@@ -83,7 +84,7 @@ func logger(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler gr
 	reqData, _ := json.Marshal(req)
 	respDta, _ := json.Marshal(resp)
 	traceId := ""
-	if tmp, ok := ctx.Value("ko_trace_id").(string); ok {
+	if tmp, ok := ctx.Value(krpc.Ko_Trace_Id).(string); ok {
 		traceId = tmp
 	}
 	errStr := ""
@@ -91,6 +92,6 @@ func logger(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler gr
 		errStr = err.Error()
 	}
 
-	debug.Info("%s %s %.3f %s %s, %s", traceId, info.FullMethod, delay, errStr, string(reqData), string(respDta))
+	debug.Info("%s %s %.3fms %s %s, %s", traceId, info.FullMethod, delay, errStr, string(reqData), string(respDta))
 	return resp, err
 }

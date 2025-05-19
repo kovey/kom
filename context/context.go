@@ -1,18 +1,18 @@
 package context
 
-import "context"
+import (
+	"context"
+
+	"github.com/kovey/discovery/krpc"
+)
 
 type Context struct {
 	context.Context
 	traceId string
 }
 
-func NewContext(parent context.Context) *Context {
-	ctx := &Context{Context: parent}
-	if traceId, ok := parent.Value("ko_trace_id").(string); ok {
-		ctx.traceId = traceId
-	}
-
+func NewContext(parent context.Context, traceId string) *Context {
+	ctx := &Context{Context: context.WithValue(parent, krpc.Ko_Trace_Id, traceId), traceId: traceId}
 	return ctx
 }
 
