@@ -43,6 +43,9 @@ func (s *server) Init(a app.AppInterface) error {
 		return err
 	}
 	time.Local = location
+	if s.e != nil {
+		s.e.SetName(a.Name())
+	}
 	return nil
 }
 
