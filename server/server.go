@@ -13,6 +13,7 @@ import (
 
 	"github.com/kovey/cli-go/app"
 	"github.com/kovey/cli-go/env"
+	"github.com/kovey/cli-go/util"
 	"github.com/kovey/debug-go/debug"
 	"github.com/kovey/discovery/etcd"
 	"github.com/kovey/discovery/krpc"
@@ -182,6 +183,8 @@ func (s *server) Reload(a app.AppInterface) error {
 }
 
 func (s *server) Flag(a app.AppInterface) error {
+	a.FlagArg(command_create, "create config file .env")
+	a.FlagLong(arg_path, util.RunDir(), app.TYPE_STRING, ".env file path created", "create")
 	if s.e == nil {
 		return nil
 	}
