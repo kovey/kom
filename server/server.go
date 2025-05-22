@@ -123,16 +123,18 @@ func (s *server) start(a app.AppInterface) error {
 		}
 	}
 
+	if s.e != nil {
+		if err := s.e.OnAfter(a); err != nil {
+			return err
+		}
+	}
+
 	s.wait.Add(1)
 	go s.runAfter()
 	s.wait.Add(1)
 	go s.runMonitor()
 	s.wait.Add(1)
 	go s.runTest()
-	if s.e != nil {
-		return s.e.OnAfter(a)
-	}
-
 	port, _ := env.GetInt(kom.SERV_PORT)
 	debug.Info("app[%s] listen on [%s:%d]", a.Name(), os.Getenv(kom.SERV_HOST), port)
 	if err := service.Listen(os.Getenv(kom.SERV_HOST), port); err != nil {
