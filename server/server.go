@@ -84,7 +84,7 @@ func (s *server) runTest() {
 }
 
 func (s *server) start(a app.AppInterface) error {
-	if !env.HasEnv() {
+	if !env.CheckDefault() {
 		return fmt.Errorf(".env config not found, use create command get .env file")
 	}
 
