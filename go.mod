@@ -3,7 +3,7 @@ module github.com/kovey/kom
 go 1.20
 
 require (
-	github.com/kovey/cli-go v1.1.9
+	github.com/kovey/cli-go v1.2.7
 	github.com/kovey/debug-go v0.0.6
 	github.com/kovey/discovery v0.1.1
 	github.com/kovey/pool v0.0.9

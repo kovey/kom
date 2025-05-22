@@ -12,8 +12,8 @@ github.com/golang/protobuf v1.5.4/go.mod h1:lnTiLA8Wa4RWRcIUkrtSVa5nRhsEGBg48fD6
 github.com/google/go-cmp v0.6.0 h1:ofyhxvXcZhMsU5ulbFiLKl/XBFqE1GSq7atu8tAmTRI=
 github.com/kisielk/errcheck v1.5.0/go.mod h1:pFxgyoBC7bSaBwPgfKdkLd5X25qrDl4LWUI2bnpBCr8=
 github.com/kisielk/gotool v1.0.0/go.mod h1:XhKaO+MFFWcvkIS/tQcRk01m1F5IRFswLeQ+oQHNcck=
-github.com/kovey/cli-go v1.1.9 h1:xmqbkku9T9B7Xlx6UR/ETRrObSFT+k9vjdGy0JD194w=
-github.com/kovey/cli-go v1.1.9/go.mod h1:zVvIyTBX59r7jYbRSFanGz0kAvqjWpUDiTbuo3PZ0Uk=
+github.com/kovey/cli-go v1.2.7 h1:x4xUWPaYrhFBE2FYcnmA98lSMCof/SCWEmT0zF0PQyk=
+github.com/kovey/cli-go v1.2.7/go.mod h1:ejl9yai6wb6sdUGGytozFHur2Dr7ce1wN339Hm3logs=
 github.com/kovey/debug-go v0.0.6 h1:+G0CFm/EvYcwxHITw9srqxvALbw50giRhT428nfdtl4=
 github.com/kovey/debug-go v0.0.6/go.mod h1:J88EXuunCnkLg62OEafQHDzkD2hq8r3Vi2Lkv+KHd9U=
 github.com/kovey/discovery v0.1.1 h1:clRakUrdgQh82aImf4G7IJrxFw/bdwtrTgglL1CGCW4=

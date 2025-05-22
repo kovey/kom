@@ -8,4 +8,6 @@ type EventInterface interface {
 	OnRun() error
 	OnAfter(app.AppInterface) error
 	OnShutdown()
+	CreateConfig(path string) error
+	Usage() bool
 }

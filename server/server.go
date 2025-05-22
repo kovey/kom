@@ -21,6 +21,11 @@ import (
 	"github.com/kovey/kom/service"
 )
 
+const (
+	command_create = "create"
+	arg_path       = "path"
+)
+
 type server struct {
 	*app.ServBase
 	e     EventInterface
@@ -29,7 +34,7 @@ type server struct {
 }
 
 func newServer(e EventInterface) *server {
-	return &server{e: e, wait: sync.WaitGroup{}}
+	return &server{ServBase: &app.ServBase{}, e: e, wait: sync.WaitGroup{}}
 }
 
 func (s *server) Init(a app.AppInterface) error {
@@ -38,46 +43,6 @@ func (s *server) Init(a app.AppInterface) error {
 		return err
 	}
 	time.Local = location
-
-	if s.e != nil {
-		if err := s.e.OnBefore(a); err != nil {
-			return err
-		}
-	}
-
-	service.Init()
-	if open, err := env.GetBool(kom.APP_ETCD_OPEN); err == nil && open {
-		timeout, _ := env.GetInt(kom.ETCD_TIMEOUT)
-		conf := etcd.Config{
-			Endpoints:   strings.Split(os.Getenv(kom.ETCD_ENDPOINTS), ","),
-			DialTimeout: timeout,
-			Username:    os.Getenv(kom.ETCD_USERNAME),
-			Password:    os.Getenv(kom.ETCD_PASSWORD),
-			Namespace:   os.Getenv(kom.ETCD_NAMESPACE),
-		}
-		port, _ := env.GetInt(kom.SERV_PORT)
-		weight, _ := env.GetInt(kom.SERV_WEIGHT)
-		local := &krpc.Local{
-			Host:    os.Getenv(kom.SERV_HOST),
-			Port:    port,
-			Name:    krpc.ServiceName(os.Getenv(kom.SERV_NAME)),
-			Group:   os.Getenv(kom.SERV_GROUP),
-			Weight:  int64(weight),
-			Version: os.Getenv(kom.SERV_VERSION),
-		}
-		ttl, _ := env.GetInt("SERV_TTL")
-		if ttl <= 0 {
-			ttl = 10
-		}
-		if err := service.RegisterToCenter(conf, int64(ttl), local); err != nil {
-			return err
-		}
-	}
-
-	if s.e != nil {
-		return s.e.OnAfter(a)
-	}
-
 	return nil
 }
 
@@ -114,18 +79,79 @@ func (s *server) runTest() {
 	internal.Run(service.Tests())
 }
 
-func (s *server) Run(a app.AppInterface) error {
+func (s *server) start(a app.AppInterface) error {
+	if !env.HasEnv() {
+		return fmt.Errorf(".env config not found, use create command get .env file")
+	}
+
+	if s.e != nil {
+		if err := s.e.OnBefore(a); err != nil {
+			return err
+		}
+	}
+
+	service.Init()
+	if open, err := env.GetBool(kom.APP_ETCD_OPEN); err == nil && open {
+		timeout, _ := env.GetInt(kom.ETCD_TIMEOUT)
+		conf := etcd.Config{
+			Endpoints:   strings.Split(os.Getenv(kom.ETCD_ENDPOINTS), ","),
+			DialTimeout: timeout,
+			Username:    os.Getenv(kom.ETCD_USERNAME),
+			Password:    os.Getenv(kom.ETCD_PASSWORD),
+			Namespace:   os.Getenv(kom.ETCD_NAMESPACE),
+		}
+		port, _ := env.GetInt(kom.SERV_PORT)
+		weight, _ := env.GetInt(kom.SERV_WEIGHT)
+		local := &krpc.Local{
+			Host:    os.Getenv(kom.SERV_HOST),
+			Port:    port,
+			Name:    krpc.ServiceName(os.Getenv(kom.SERV_NAME)),
+			Group:   os.Getenv(kom.SERV_GROUP),
+			Weight:  int64(weight),
+			Version: os.Getenv(kom.SERV_VERSION),
+		}
+		ttl, _ := env.GetInt("SERV_TTL")
+		if ttl <= 0 {
+			ttl = 10
+		}
+		if err := service.RegisterToCenter(conf, int64(ttl), local); err != nil {
+			return err
+		}
+	}
+
 	s.wait.Add(1)
 	go s.runAfter()
 	s.wait.Add(1)
 	go s.runMonitor()
 	s.wait.Add(1)
 	go s.runTest()
+	if s.e != nil {
+		return s.e.OnAfter(a)
+	}
 
 	port, _ := env.GetInt(kom.SERV_PORT)
 	debug.Info("app[%s] listen on [%s:%d]", a.Name(), os.Getenv(kom.SERV_HOST), port)
 	if err := service.Listen(os.Getenv(kom.SERV_HOST), port); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func (s *server) Run(a app.AppInterface) error {
+	method, err := a.Arg(0, app.TYPE_STRING)
+	if err != nil {
+		method, _ = a.Get(app.Ko_Command_Start)
+	}
+
+	switch method.String() {
+	case command_create:
+		if s.e != nil {
+			f, _ := a.Get(command_create, arg_path)
+			return s.e.CreateConfig(f.String())
+		}
+	default:
+		return s.start(a)
 	}
 
 	return nil
@@ -158,4 +184,15 @@ func (s *server) Flag(a app.AppInterface) error {
 	}
 
 	return s.e.OnFlag(a)
+}
+
+func (s *server) Usage() {
+	if s.e == nil {
+		s.ServBase.Usage()
+		return
+	}
+
+	if !s.e.Usage() {
+		s.ServBase.Usage()
+	}
 }
