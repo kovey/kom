@@ -20,6 +20,7 @@ import (
 	"github.com/kovey/kom"
 	"github.com/kovey/kom/internal"
 	"github.com/kovey/kom/service"
+	"google.golang.org/grpc"
 )
 
 const (
@@ -138,7 +139,13 @@ func (s *server) start(a app.AppInterface) error {
 	port, _ := env.GetInt(kom.SERV_PORT)
 	debug.Info("app[%s] listen on [%s:%d]", a.Name(), os.Getenv(kom.SERV_HOST), port)
 	if err := service.Listen(os.Getenv(kom.SERV_HOST), port); err != nil {
-		return err
+		if err == grpc.ErrServerStopped {
+			return nil
+		}
+
+		debug.Erro(err.Error())
+		s.Shutdown(a)
+		return app.Err_Not_Restart
 	}
 
 	return nil
