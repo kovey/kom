@@ -71,7 +71,9 @@ func (s *server) runMonitor() {
 	port, _ := env.GetInt(kom.SERV_PORT)
 	s.pprof = &http.Server{Addr: fmt.Sprintf("%s:%d", os.Getenv(kom.SERV_HOST), port+10001), Handler: http.DefaultServeMux}
 	if err := s.pprof.ListenAndServe(); err != nil {
-		debug.Erro("listen pprof failure, error: %s", err)
+		if err != http.ErrServerClosed {
+			debug.Erro("listen pprof failure, error: %s", err)
+		}
 	}
 }
 
