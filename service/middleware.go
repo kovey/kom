@@ -10,6 +10,8 @@ import (
 
 	"github.com/kovey/debug-go/debug"
 	"github.com/kovey/discovery/krpc"
+	c "github.com/kovey/kom/context"
+	"github.com/kovey/pool"
 	"google.golang.org/grpc"
 )
 
@@ -55,7 +57,15 @@ func recovery(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler 
 		if tmp, ok := ctx.Value(krpc.Ko_Trace_Id).(string); ok {
 			traceId = tmp
 		}
-		debug.Erro("%s %s %s\n%s", traceId, info.FullMethod, err, stack())
+
+		spanId := ""
+		if cc, ok := ctx.(*pool.Context); ok {
+			if ccs, ok := cc.Context.(*c.Context); ok {
+				spanId = ccs.SpanId()
+			}
+		}
+
+		debug.Erro("%s %s %s %s\n%s", traceId, spanId, info.FullMethod, err, stack())
 	}()
 	return handler(ctx, req)
 }
@@ -92,6 +102,13 @@ func logger(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler gr
 		errStr = err.Error()
 	}
 
-	debug.Info("%s %s %.3fms %s %s, %s", traceId, info.FullMethod, delay, errStr, string(reqData), string(respDta))
+	spanId := ""
+	if cc, ok := ctx.(*pool.Context); ok {
+		if ccs, ok := cc.Context.(*c.Context); ok {
+			spanId = ccs.SpanId()
+		}
+	}
+
+	debug.Info("%s %s %s %.3fms %s %s, %s", traceId, spanId, info.FullMethod, delay, errStr, string(reqData), string(respDta))
 	return resp, err
 }
