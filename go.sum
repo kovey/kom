@@ -17,8 +17,8 @@ github.com/kisielk/errcheck v1.5.0/go.mod h1:pFxgyoBC7bSaBwPgfKdkLd5X25qrDl4LWUI
 github.com/kisielk/gotool v1.0.0/go.mod h1:XhKaO+MFFWcvkIS/tQcRk01m1F5IRFswLeQ+oQHNcck=
 github.com/kovey/cli-go v1.2.17 h1:OUYML4Kw9aY8Ak17PHzeEOFbum3osI1y+xboLMw3Ep0=
 github.com/kovey/cli-go v1.2.17/go.mod h1:RVkW27dgkgzrWxr/Qdue/GAbgXKm2pGzWZHvWAJ0Vow=
-github.com/kovey/debug-go v0.1.2 h1:YhHEql96SvoSs/IFSQDHXqxiVa0UV2iyUQBm+XPFHtU=
-github.com/kovey/debug-go v0.1.2/go.mod h1:J88EXuunCnkLg62OEafQHDzkD2hq8r3Vi2Lkv+KHd9U=
+github.com/kovey/debug-go v0.1.3 h1:Q7VNlll56l/CYRYVBHNkmqxO5xuDduh7iZoCDtl2TFc=
+github.com/kovey/debug-go v0.1.3/go.mod h1:J88EXuunCnkLg62OEafQHDzkD2hq8r3Vi2Lkv+KHd9U=
 github.com/kovey/discovery v0.1.1 h1:clRakUrdgQh82aImf4G7IJrxFw/bdwtrTgglL1CGCW4=
 github.com/kovey/discovery v0.1.1/go.mod h1:I1rKDZHsu5R1RvnrTy7kx8PLVg2ggWLz52TfF2tcYxo=
 github.com/kovey/pool v0.0.9 h1:iZ+MslndcV/h1a+z0jiOmZXuQ999M6UW+5HMMRm9isc=

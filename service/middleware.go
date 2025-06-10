@@ -15,6 +15,16 @@ import (
 	"google.golang.org/grpc"
 )
 
+type logInfo struct {
+	Path     string `json:"path"`
+	Delay    string `json:"delay"`
+	Error    string `json:"error"`
+	TraceId  string `json:"trace_id"`
+	SpanId   string `json:"span_id"`
+	Request  string `json:"request"`
+	Response string `json:"response"`
+}
+
 func stack() string {
 	res := make([]string, 0)
 	for i := 3; ; i++ {
@@ -65,7 +75,7 @@ func recovery(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler 
 			}
 		}
 
-		debug.Erro("%s %s %s %s\n%s", traceId, spanId, info.FullMethod, err, stack())
+		debug.LogWith(traceId, spanId).Erro("%s %s\r\n%s", info.FullMethod, err, stack())
 	}()
 	return handler(ctx, req)
 }
@@ -83,7 +93,11 @@ func stream_logger(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, h
 		streamName = "server"
 	}
 
-	debug.Info("%s %s %.3fms %s", streamName, info.FullMethod, delay, errStr)
+	if !debug.FormatIsJson() {
+		debug.Info("%s %s %.3fms %s", streamName, info.FullMethod, delay, errStr)
+	} else {
+		debug.Json(logInfo{Path: info.FullMethod, Delay: fmt.Sprintf("%.3fms", delay), Error: errStr})
+	}
 	return err
 }
 
@@ -109,6 +123,10 @@ func logger(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler gr
 		}
 	}
 
-	debug.Info("%s %s %s %.3fms %s %s, %s", traceId, spanId, info.FullMethod, delay, errStr, string(reqData), string(respDta))
+	if !debug.FormatIsJson() {
+		debug.LogWith(traceId, spanId).Info("%s %.3fms %s %s, %s", info.FullMethod, delay, errStr, string(reqData), string(respDta))
+	} else {
+		debug.Json(logInfo{Path: info.FullMethod, Delay: fmt.Sprintf("%.3fms", delay), Error: errStr, Request: string(reqData), Response: string(respDta), TraceId: traceId, SpanId: spanId})
+	}
 	return resp, err
 }
