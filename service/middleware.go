@@ -104,7 +104,7 @@ func logger(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler gr
 	if !debug.FormatIsJson() {
 		cc.Log.Info("%s %.3fms %s %s, %s", info.FullMethod, delay, errStr, string(reqData), string(respDta))
 	} else {
-		debug.Json(logInfo{Path: info.FullMethod, Delay: fmt.Sprintf("%.3fms", delay), Error: errStr, Request: string(reqData), Response: string(respDta), TraceId: cc.TraceId(), SpanId: cc.SpanId()})
+		cc.Log.Json(logInfo{Path: info.FullMethod, Delay: fmt.Sprintf("%.3fms", delay), Error: errStr, Request: string(reqData), Response: string(respDta), TraceId: cc.TraceId(), SpanId: cc.SpanId()})
 	}
 	return resp, err
 }
