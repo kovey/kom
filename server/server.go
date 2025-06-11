@@ -48,6 +48,10 @@ func (s *server) Init(a app.AppInterface) error {
 	if s.e != nil {
 		s.e.SetName(a.Name())
 	}
+
+	if os.Getenv("DEBUG_FORMAT") == "json" {
+		debug.UseJsonFormat()
+	}
 	return nil
 }
 
@@ -212,4 +216,24 @@ func (s *server) Usage() {
 	if !s.e.Usage() {
 		s.ServBase.Usage()
 	}
+}
+
+func (s *server) Version() string {
+	if s.e != nil {
+		if version := s.e.Version(); version != "" {
+			return version
+		}
+	}
+
+	return s.ServBase.Version()
+}
+
+func (s *server) Author() string {
+	if s.e != nil {
+		if author := s.e.Author(); author != "" {
+			return author
+		}
+	}
+
+	return s.ServBase.Author()
 }

@@ -17,6 +17,8 @@ type EventInterface interface {
 	Usage() bool
 	SetName(name string)
 	AppName() string
+	Version() string
+	Author() string
 }
 
 type EventBase struct {
@@ -52,4 +54,12 @@ func (s *EventBase) Usage() bool {
 
 func (s *EventBase) AppName() string {
 	return os.Getenv(env.APP_NAME)
+}
+
+func (s *EventBase) Version() string {
+	return ""
+}
+
+func (s *EventBase) Author() string {
+	return ""
 }
