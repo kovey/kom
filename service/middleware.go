@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/kovey/debug-go/debug"
-	"github.com/kovey/discovery/krpc"
 	c "github.com/kovey/kom/context"
 	"github.com/kovey/pool"
 	"google.golang.org/grpc"
@@ -63,19 +62,8 @@ func recovery(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler 
 			return
 		}
 
-		traceId := ""
-		if tmp, ok := ctx.Value(krpc.Ko_Trace_Id).(string); ok {
-			traceId = tmp
-		}
-
-		spanId := ""
-		if cc, ok := ctx.(*pool.Context); ok {
-			if ccs, ok := cc.Context.(*c.Context); ok {
-				spanId = ccs.SpanId()
-			}
-		}
-
-		debug.LogWith(traceId, spanId).Erro("%s %s\r\n%s", info.FullMethod, err, stack())
+		cc, _ := ctx.(*pool.Context).Parent().(*c.Context)
+		cc.Log.Erro("%s %s\r\n%s", info.FullMethod, err, stack())
 	}()
 	return handler(ctx, req)
 }
@@ -107,26 +95,16 @@ func logger(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler gr
 	delay := float64(time.Now().UnixMicro()-begin) * 0.001
 	reqData, _ := json.Marshal(req)
 	respDta, _ := json.Marshal(resp)
-	traceId := ""
-	if tmp, ok := ctx.Value(krpc.Ko_Trace_Id).(string); ok {
-		traceId = tmp
-	}
 	errStr := ""
 	if err != nil {
 		errStr = err.Error()
 	}
 
-	spanId := ""
-	if cc, ok := ctx.(*pool.Context); ok {
-		if ccs, ok := cc.Context.(*c.Context); ok {
-			spanId = ccs.SpanId()
-		}
-	}
-
+	cc, _ := ctx.(*pool.Context).Parent().(*c.Context)
 	if !debug.FormatIsJson() {
-		debug.LogWith(traceId, spanId).Info("%s %.3fms %s %s, %s", info.FullMethod, delay, errStr, string(reqData), string(respDta))
+		cc.Log.Info("%s %.3fms %s %s, %s", info.FullMethod, delay, errStr, string(reqData), string(respDta))
 	} else {
-		debug.Json(logInfo{Path: info.FullMethod, Delay: fmt.Sprintf("%.3fms", delay), Error: errStr, Request: string(reqData), Response: string(respDta), TraceId: traceId, SpanId: spanId})
+		debug.Json(logInfo{Path: info.FullMethod, Delay: fmt.Sprintf("%.3fms", delay), Error: errStr, Request: string(reqData), Response: string(respDta), TraceId: cc.TraceId(), SpanId: cc.SpanId()})
 	}
 	return resp, err
 }
