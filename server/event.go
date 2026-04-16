@@ -10,9 +10,8 @@ import (
 type EventInterface interface {
 	OnFlag(app.AppInterface) error
 	OnBefore(app.AppInterface) error
-	OnRun() error
+	OnRun(app.AppInterface) error
 	OnAfter(app.AppInterface) error
-	OnShutdown()
 	CreateConfig(path string) error
 	Usage() bool
 	SetName(name string)

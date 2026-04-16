@@ -5,12 +5,11 @@ go 1.23.0
 toolchain go1.23.9
 
 require (
-	github.com/kovey/cli-go v1.2.20
-	github.com/kovey/debug-go v0.1.3
+	github.com/kovey/cli-go v1.2.21
+	github.com/kovey/debug-go v0.1.4
 	github.com/kovey/discovery v0.1.1
 	github.com/kovey/pool v0.0.9
 	google.golang.org/grpc v1.64.0
-	google.golang.org/protobuf v1.33.0
 )
 
 require (
@@ -29,4 +28,5 @@ require (
 	golang.org/x/text v0.14.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20240318140521-94a12d6c2237 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240318140521-94a12d6c2237 // indirect
+	google.golang.org/protobuf v1.33.0 // indirect
 )

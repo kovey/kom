@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	"sync"
 	"time"
 
 	"net/http"
@@ -31,12 +30,11 @@ const (
 type server struct {
 	*app.ServBase
 	e     EventInterface
-	wait  sync.WaitGroup
 	pprof *http.Server
 }
 
 func newServer(e EventInterface) *server {
-	return &server{ServBase: &app.ServBase{}, e: e, wait: sync.WaitGroup{}}
+	return &server{ServBase: &app.ServBase{}, e: e}
 }
 
 func (s *server) Init(a app.AppInterface) error {
@@ -55,19 +53,17 @@ func (s *server) Init(a app.AppInterface) error {
 	return nil
 }
 
-func (s *server) runAfter() {
-	defer s.wait.Done()
+func (s *server) runOther(a app.AppInterface) {
 	if s.e == nil {
 		return
 	}
 
-	if err := s.e.OnRun(); err != nil {
+	if err := s.e.OnRun(a); err != nil {
 		debug.Erro("run event.OnRun failure, error: %s", err)
 	}
 }
 
-func (s *server) runMonitor() {
-	defer s.wait.Done()
+func (s *server) runMonitor(a app.AppInterface) {
 	if pprofOn, err := env.GetBool(kom.APP_PPROF_OPEN); err != nil || !pprofOn {
 		return
 	}
@@ -81,8 +77,7 @@ func (s *server) runMonitor() {
 	}
 }
 
-func (s *server) runTest() {
-	defer s.wait.Done()
+func (s *server) runTest(a app.AppInterface) {
 	if testOn, err := env.GetBool(kom.APP_TEST_OPEN); err != nil || !testOn {
 		return
 	}
@@ -136,12 +131,10 @@ func (s *server) start(a app.AppInterface) error {
 		}
 	}
 
-	s.wait.Add(1)
-	go s.runAfter()
-	s.wait.Add(1)
-	go s.runMonitor()
-	s.wait.Add(1)
-	go s.runTest()
+	a.RunChild(s.runMonitor)
+	a.RunChild(s.runTest)
+	a.RunChild(s.listen)
+	s.runOther(a)
 	port, _ := env.GetInt(kom.SERV_PORT)
 	debug.Info("app[%s] listen on [%s:%d]", a.Name(), os.Getenv(kom.SERV_HOST), port)
 	if err := service.Listen(os.Getenv(kom.SERV_HOST), port); err != nil {
@@ -150,11 +143,16 @@ func (s *server) start(a app.AppInterface) error {
 		}
 
 		debug.Erro(err.Error())
-		s.Shutdown(a)
 		return app.Err_Not_Restart
 	}
 
 	return nil
+}
+
+func (s *server) listen(a app.AppInterface) {
+	ctx := a.Context()
+	<-ctx.Done()
+	s.shutdown()
 }
 
 func (s *server) Run(a app.AppInterface) error {
@@ -176,12 +174,9 @@ func (s *server) Run(a app.AppInterface) error {
 	return nil
 }
 
-func (s *server) Shutdown(a app.AppInterface) error {
+func (s *server) shutdown() {
 	service.Stop()
 	service.Shutdown()
-	if s.e != nil {
-		s.e.OnShutdown()
-	}
 	if s.pprof != nil {
 		if err := s.pprof.Shutdown(context.Background()); err != nil {
 			debug.Erro("shutdown pprof failure, error: %s", err)
@@ -189,12 +184,6 @@ func (s *server) Shutdown(a app.AppInterface) error {
 	}
 
 	internal.Shutdown()
-	s.wait.Wait()
-	return nil
-}
-
-func (s *server) Reload(a app.AppInterface) error {
-	return nil
 }
 
 func (s *server) Flag(a app.AppInterface) error {
